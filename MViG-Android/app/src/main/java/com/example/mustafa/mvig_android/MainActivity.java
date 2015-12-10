@@ -14,13 +14,18 @@ import android.widget.ProgressBar;
 public class MainActivity extends AppCompatActivity {
 
 
+    private static final int PROGRESS = 0x1;
+    private ProgressBar mProgress;
+    private int mProgressStatus = 0;
+    private Handler mHandler = new Handler();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        //mProgress = (ProgressBar) findViewById(R.id.progress_bar);
+        mProgress = (ProgressBar) findViewById(R.id.progress_bar);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
