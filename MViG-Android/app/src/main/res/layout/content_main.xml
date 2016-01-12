@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:inputType="phone"
         android:ems="10"
-        android:id="@+id/editText"
+        android:id="@+id/edt_receiver"
         android:layout_alignParentTop="true"
         android:layout_toEndOf="@+id/txt_receiver" />
 
@@ -39,9 +39,9 @@
         android:layout_width="wrap_content"
         android:layout_height="152dp"
         android:layout_marginTop="67dp"
-        android:layout_below="@+id/editText"
+        android:layout_below="@+id/edt_receiver"
         android:layout_alignParentStart="true"
-        android:layout_alignEnd="@+id/editText">
+        android:layout_alignEnd="@+id/edt_receiver">
 
         <EditText
 
@@ -49,16 +49,12 @@
             android:layout_height="wrap_content"
             android:inputType="textMultiLine"
             android:ems="10"
-            android:id="@+id/txt_body"
+            android:id="@+id/edt_message"
             />
     </ScrollView>
 
-    <ProgressBar
-        android:id="@+id/progress_bar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:gravity="bottom"/>
+
+
 
 
 </RelativeLayout>
