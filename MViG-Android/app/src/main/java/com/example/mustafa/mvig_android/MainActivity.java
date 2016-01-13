@@ -45,8 +45,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ProgressDialog progress;
     Thread t1;
-    int Kontrol = 0;
-    //Treatment ProgressDialog
+
     public void loadingInIncrements(){
 
         progress = new ProgressDialog(this);
@@ -56,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
         progress.setProgress(100);
         progress.show();
 
-        Log.i("Kontrol1",Kontrol+"");
         final int totalProgressTime = 100;
         t1 = new Thread() {
                 @Override
