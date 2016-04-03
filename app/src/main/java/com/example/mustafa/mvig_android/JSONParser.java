@@ -17,7 +17,7 @@ import java.net.URL;
  */
 
 
-class HTTPGet extends AsyncTask<String, Void, Document> {
+class JSONParser extends AsyncTask<String, Void, Document> {
 
     private Exception exception;
 
