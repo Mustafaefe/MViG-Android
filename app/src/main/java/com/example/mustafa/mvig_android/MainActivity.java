@@ -1,77 +1,73 @@
 package com.example.mustafa.mvig_android;
 
 import android.app.ProgressDialog;
-import android.content.Intent;
-import android.net.Uri;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.StrictMode;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.telephony.SmsManager;
-import android.util.Log;
-import android.view.MotionEvent;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
-import android.widget.ProgressBar;
-import android.widget.Toast;
 
-import org.jsoup.*;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.FileWriter;
-import java.io.IOException;
-
-
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.logging.LogRecord;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 public class MainActivity extends AppCompatActivity {
 
-    private ProgressDialog progress;
-    Thread t1;
+    private Thread t1 = null;
+    private ProgressDialog progress = null;
+    private EditText receiver;
+    private EditText message;
+    private EditText pk;
+    private int GLOBAL_PK = 0;
+    int pk_value = 0;
+    SmsManager manager;
+    SharedPreferences sharedpreferences;
 
-    public void loadingInIncrements(){
+    private static final String TAG_FIELDS = "fields";
+    private static final String TAG_MESSAGE = "message_content";
+    private static final String TAG_DESTINATION = "destination_number";
+    private static final String TAG_PK = "pk";
+    public static final String MyPREFERENCES = "Prefs";
+    public static final String Name = "GLOBAL_PK";
 
+    public void loadingInIncrements() {
         progress = new ProgressDialog(this);
         progress.setMessage("Sending Message");
         progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progress.setIndeterminate(false);
-        progress.setProgress(100);
+        progress.setProgress(0);
         progress.show();
-
         final int totalProgressTime = 100;
         t1 = new Thread() {
-                @Override
-                public void run() {
-                    int jumpTime = 0;
-                    while (jumpTime < totalProgressTime) {
-                        try {
-                            Thread.sleep(200);
-                            jumpTime += 5;
-                            progress.setProgress(jumpTime);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    progress.dismiss();
+            @Override
+            public void run() {
+                for (int i = 0; i < 100000; i++) {
+                    i = i * i + i * 2;
                 }
-            };
+                int jumpTime = 0;
+                while (jumpTime < totalProgressTime) {
+                    try {
+                        Thread.sleep(200);
+                        jumpTime += 5;
+                        progress.setProgress(jumpTime);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                progress.dismiss();
+            }
+        };
         t1.start();
     }
 
@@ -83,50 +79,105 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
 
-        EditText receiver = (EditText) findViewById(R.id.edt_receiver);
-        EditText message = (EditText) findViewById(R.id.edt_message);
-        receiver.setText("213213");
-        message.setText("Mesajjj");
-
-        loadingInIncrements();
-        getMessages();
-
-
-
+        manager = SmsManager.getDefault();
+        sharedpreferences = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedpreferences.edit();
+        editor.putInt(Name, 0);
+        editor.commit();
+        callAsynchronousTask();
+        //JSONParse parse = new JSONParse();
+        //parse.execute();
     }
 
-    public void getMessages(){
-        try {
-            Document doc = Jsoup.connect("http://mvig.azurewebsites.net/rss").get();
-            Elements e = doc.select("body > div:nth-child(2) > div > div > div > table > tbody");
-            Log.i("E: ",""+e.size());
-            Elements elements1 = e.select("tbody:nth-child("+(e.size()+1)+") > tr > td:nth-child(2)");
-            Elements elements2 = e.select("tbody:nth-child("+(e.size()+1)+") > tr > td:nth-child(3)");
-            Log.i("E: ",""+elements1.text());
-            sendMessage(elements1.text(), elements2.text());
-            /*for(int i=0; i<e.size(); i++){
-                Log.i("AA: ",e.get(i).text()+"");
-            }*/
-        } catch (IOException e) {
-            e.printStackTrace();
+    private class JSONParse extends AsyncTask<String, String, JSONArray> {
+        private ProgressDialog pDialog;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            receiver = (EditText) findViewById(R.id.edt_receiver);
+            message = (EditText) findViewById(R.id.edt_message);
+            pk = (EditText) findViewById(R.id.edt_pk);
+            pDialog = new ProgressDialog(MainActivity.this);
+            pDialog.setMessage("Getting Data ...");
+            pDialog.setIndeterminate(false);
+            pDialog.setCancelable(true);
+            pDialog.show();
+
+        }
+
+        @Override
+        protected JSONArray doInBackground(String... args) {
+            JSONParser jParser = new JSONParser();
+            // Getting JSON from URL
+            JSONArray json = jParser.getJSONFromUrl("http://mefedck.hol.es/");
+            return json;
+        }
+
+        @Override
+        protected void onPostExecute(JSONArray json) {
+            GLOBAL_PK = sharedpreferences.getInt(Name, 0);
+            System.out.println("GLOBAL PK: " + GLOBAL_PK);
+            pDialog.dismiss();
+
+            try {
+                for (int i = GLOBAL_PK; i < json.length(); i++) {
+                    // Getting JSON Array
+
+                    JSONObject main_object = json.getJSONObject(i);
+                    JSONObject fields = main_object.getJSONObject(TAG_FIELDS);
+
+                    // Storing  JSON item in a Variable
+                    String message_content = fields.getString(TAG_MESSAGE);
+                    String destination_number = fields.getString(TAG_DESTINATION);
+                    pk_value = Integer.parseInt(main_object.getString(TAG_PK));
+
+                    //Set JSON Data in TextView
+                    message.setText(message_content);
+                    receiver.setText(destination_number);
+                    pk.setText("" + pk_value);
+                    sendMessage(destination_number, message_content);
+
+                }
+
+                SharedPreferences.Editor editor = sharedpreferences.edit();
+                editor.putInt(Name, pk_value);
+                editor.commit();
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
         }
     }
 
-    public void sendMessage(String number, String content){
+    public void callAsynchronousTask() {
+        final Handler handler = new Handler();
+        Timer timer = new Timer();
+        TimerTask doAsynchronousTask = new TimerTask() {
+            @Override
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run() {
+                        try {
+                            JSONParse performBackgroundTask = new JSONParse();
+                            // PerformBackgroundTask this class is the class that extends AsynchTask
+                            performBackgroundTask.execute();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            }
+        };
+        timer.schedule(doAsynchronousTask, 0, 3000); //execute in every 1000 ms
+    }
 
-        SmsManager manager = SmsManager.getDefault();
+    public void sendMessage(String number, String content) {
         String no = number;
         String cntnt = content;
-        manager.sendTextMessage(no,null,cntnt,null,null);
+        manager.sendTextMessage(no, null, cntnt, null, null);
     }
 
 
